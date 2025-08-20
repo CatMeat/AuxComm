@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AuxComm EOC Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: grid;
+      grid-template-rows: 1min-content 1fr 1fr 1fr;
+      grid-gap: 10px;
+      height: 100vh;
+      padding: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .box {
+      background-color: #222;
+      padding: 10px;
+      border-radius: 5px;
+      flex: 1;
+      overflow: hidden;
+    }
+    img {
+      width: 90%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .small-text { font-size: 0.9em; }
+    .realhighlight { color: #0f0; font-weight: bold; }
+    .statichighlight { color: #f00; font-weight: bold; }
+    textarea {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #0f0;
+      border: none;
+      resize: none;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="row">
+  <div class="box" id="header">
+    <center><h2>KG4NJA - Langley Research Center</h2></center>
+    </div>
+   </div>
+  <!-- Top Row -->
+  <div class="row">
+    <!-- Date & Time -->
+    <div class="box" id="datetime">
+      <center><u><h3>Date / Time / Location</h3></u></center>
+      <p>Local: <span id="local-date" class="realhighlight"></span> <span id="local-time" class="realhighlight"></span></p>
+      <p>UTC: <span id="utc-date" class="realhighlight"></span> <span id="utc-time" class="realhighlight"></span></p>
+      <p>Day: <span id="weekday" class="realhighlight"></span></p>
+      <br>
+      <p>Grid: <span class="statichighlight">FM17ke</span></p>
+    </div>
+
+    <!-- Weather Placeholder -->
+    <div class="box" id="weather">
+      <center><u><h3>Weather (Hampton, VA)</h3></u></center>
+      <p>Temp: <span id="temperature" class="realhighlight">Loading...</span></p>
+      <p>Wind: <span id="windSpeed" class="realhighlight">Loading...</span>&nbsp;<span id="windDirection" class="realhighlight">Loading...</span></p>
+      <p>Humidity: <span id="humidity" class="realhighlight">Loading...</span> Dewpoint: <span id="dewpoint" class="realhighlight">Loading...</span></p>
+      <p>Precip Chance: <span id="precipitation" class="realhighlight">Loading...</span></p>
+      <p>Status: <span id="shortForecast" class="realhighlight">Loading...</span></p>
+      <br>
+      <p>Source: <span id="weatherSource" class="realhighlight">Loading...</span> <span id="updateTime" class="realhighlight">Loading...</span></p>
+    </div>
+
+    <!-- Frequency Info -->
+    <div class="box" id="frequencies">
+      <center><u><h3>Local ARES Frequencies</h3></u></center>
+      <p>Primary: <span class="statichighlight">146.760 (-) CTCSS 118.8 Hz (WMX)</span></p>
+      <p>Alternate: <span class="statichighlight">146.670 (+) CTCSS 173.8 Hz (HAX)</span></p>
+      <p>ODEN/A: <span class="statichighlight">3947 kHz (pri) 7240 kHz (alt)</span></p>
+      <p>ODEN/B: <span class="statichighlight">3943 kHz (pri) 7248 kHz (alt)</span></p>
+      <p>ODEN/CD: <span class="statichighlight">3578.5 kHz (pri) 7050 kHz (alt)</span></p>
+    </div>
+  </div>
+
+  <!-- Middle Row -->
+  <div class="row">
+    <div class="box">
+      <h2>HF Propagation</h2>
+      <img height="30%" width="10%" src="https://www.hamqsl.com/solar101vhf.php" alt="HF Propagation Info">
+    </div>
+    <div class="box">
+      <h2>HF Propagation</h2>
+      <img height="30%" width="10%" src="https://www.hamqsl.com/solarmuf.php" alt="HF Propagation Info">
+    </div>
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="row">
+    <!-- Message Templates -->
+    <div class="box">
+      <h2>Message Templates</h2>
+      <ul class="small-text">
+        <li><strong>Emergency:</strong> "This is KG4NJA reporting emergency traffic for LaRC-EOC."</li>
+        <li><strong>Priority:</strong> "Priority message from LaRC-EOC to [Recipient], relay ASAP."</li>
+        <li><strong>Routine:</strong> "Routine SITREP from [CALLSIGN] to [Net Control]."</li>
+      </ul>
+    </div>
+
+    <!-- Operator Notes -->
+    <div class="box">
+      <h2>Shift Notes / Status</h2>
+      <textarea placeholder="Operator Log / Shift Notes..."></textarea>
+    </div>
+  </div>
+
+  <!-- JavaScript for Updates -->
+  <script>
+  
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat'); 
+    const lon = urlParams.get('lon');
+  
+        // ensure defaults
+        
+    const latitude = lat || 38.8;
+    const longitude = lon || -98.4;
+
+// Local Weather from api.weather.gov
+    async function getWeather() {
+    // https://api.weather.gov/gridpoints/TOP/32,81/forecast/hourly
+      try {
+        // Step 1: Get gridpoint info
+        const pointsResponse = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`);
+        const pointsData = await pointsResponse.json();
+        const forecastHourlyUrl = pointsData.properties.forecastHourly;
+        const source = pointsData.properties.cwa;
+
+        // Step 2: Get hourly forecast
+        const forecastResponse = await fetch(forecastHourlyUrl);
+        const forecastData = await forecastResponse.json();
+
+        // Step 3: Extract current readings (technically period 1)
+        const currentUpdate =        forecastData.properties.updateTime;
+        
+        const currentTemperature =   forecastData.properties.periods[0].temperature;
+        const currentWindSpeed =     forecastData.properties.periods[0].windSpeed; 
+        const currentWindDirection = forecastData.properties.periods[0].windDirection;
+        const currentShortForecast = forecastData.properties.periods[0].shortForecast;
+        const currentPrecipitation = forecastData.properties.periods[0].probabilityOfPrecipitation.value; 
+        const currentDewpointC =     forecastData.properties.periods[0].dewpoint.value; // in celsius
+        const currentDewpoint =      (currentDewpointC * (9/5)) +32; // convert to fahrenheit
+        const currentHumidity =      forecastData.properties.periods[0].relativeHumidity.value; 
+
+        // Step 4: Display in HTML
+        document.getElementById('weatherSource').textContent = `${source}`;
+        document.getElementById('updateTime').textContent = `[${currentUpdate}]`;
+        document.getElementById('temperature').textContent = `${currentTemperature}°F`;
+        document.getElementById('windSpeed').textContent = `${currentWindSpeed}`;
+        document.getElementById('windDirection').textContent = `${currentWindDirection}`;
+        document.getElementById('shortForecast').textContent = `${currentShortForecast}`;
+        document.getElementById('precipitation').textContent = `${currentPrecipitation}%`;
+        document.getElementById('dewpoint').textContent = `${currentDewpoint}°F`;
+        document.getElementById('humidity').textContent = `${currentHumidity}%`;
+
+      } catch (error) {
+        document.getElementById('weatherSource').textContent ='Error fetching source (cwa).';
+        document.getElementById('updateTime').textContent ='Error fetching updateTime.';
+        document.getElementById('temperature').textContent = 'Error fetching temperature.';
+        document.getElementById('windSpeed').textContent = 'Error fetching windSpeed.';
+        document.getElementById('windDirection').textContent = 'Error fetching windDirection.';
+        document.getElementById('shortForecast').textContent = 'Error fetching shortForecast.';
+        document.getElementById('precipitation').textContent = 'Error fetching precipitation.';
+        document.getElementById('dewpoint').textContent = 'Error fetching dewpoint.';
+        document.getElementById('humidity').textContent = 'Error fetching humidity.';
+      }
+    }
+
+
+
+
+    function updateTime() {
+      const now = new Date();
+
+      // Local Time (Eastern Time, US)
+      const localDate = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+      const localTime = now.toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York',
+        hour12: false
+      });
+
+      // UTC Time
+      const utcDate = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      const utcTime = now.toUTCString().split(" ")[4]; // HH:MM:SS
+
+      // Day of Week
+      const weekday = now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        timeZone: 'America/New_York'
+      });
+
+      // Update Elements
+      document.getElementById('local-date').textContent = localDate;
+      document.getElementById('local-time').textContent = localTime;
+      document.getElementById('utc-date').textContent = utcDate;
+      document.getElementById('utc-time').textContent = utcTime;
+      document.getElementById('weekday').textContent = weekday;
+    }
+    
+    function updateWeather(){
+        getWeather();
+}
+
+    updateTime();
+    updateWeather;
+
+    setInterval(updateTime, 1000);
+    setInterval(updateWeather, 1000);
+  </script>
+</body>
+</html>
