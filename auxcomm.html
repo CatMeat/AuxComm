@@ -28,8 +28,8 @@
       overflow: hidden;
     }
     img {
-      width: auto;
-      height: 60%;
+      width: 90%;
+      height: auto;
       border-radius: 4px;
     }
     .small-text { font-size: 0.9em; }
@@ -58,16 +58,19 @@
     <!-- Date & Time -->
     <div class="box" id="datetime">
       <center><u><h3>Date / Time / Location</h3></u></center>
-      <p>Local: <span id="local-date" class="realhighlight"></span> <span id="local-time" class="realhighlight"></span></p>
-      <p>UTC: <span id="utc-date" class="realhighlight"></span> <span id="utc-time" class="realhighlight"></span></p>
-      <p>Day: <span id="weekday" class="realhighlight"></span></p>
+      
+      <p>Local: <span id="rfc1322Format" class="realhighlight"></span></p>
+      
+      
+      <p>&nbsp;UTC: <span id="utc-date" class="realhighlight"></span></p>
       <br>
-      <p>Grid: <span class="statichighlight">FM17ke</span></p>
+      <p>Lat/Long: <span id="local-lat" class="realhighlight"></span>, <span id="local-long" class="realhighlight"></span></p>
+      <p>Grid: <span id="gridsquare" class="realhighlight"></span> - <span id="location" class="realhighlight"></span></p>
     </div>
 
     <!-- Weather Placeholder -->
     <div class="box" id="weather">
-      <center><u><h3>Weather (Hampton, VA)</h3></u></center>
+      <center><u><h3>Weather</h3></u></center>
       <p>Temp: <span id="temperature" class="realhighlight">Loading...</span></p>
       <p>Wind: <span id="windSpeed" class="realhighlight">Loading...</span>&nbsp;<span id="windDirection" class="realhighlight">Loading...</span></p>
       <p>Humidity: <span id="humidity" class="realhighlight">Loading...</span> Dewpoint: <span id="dewpoint" class="realhighlight">Loading...</span></p>
@@ -121,17 +124,14 @@
 
   <!-- JavaScript for Updates -->
   <script>
-  
+    // Process query
     const urlParams = new URLSearchParams(window.location.search);
-    const lat = urlParams.get('lat'); 
-    const lon = urlParams.get('lon');
-  
-        // ensure defaults
-        
-    const latitude = lat || 38.8;
-    const longitude = lon || -98.4;
+    const urllat = urlParams.get('lat'); 
+    const urllon = urlParams.get('lon');
+    const latitude = urllat || 37.09136; // ensure default 41
+    const longitude = urllon || -76.37917; // ensure default -123
 
-// Local Weather from api.weather.gov
+    // Local Weather from api.weather.gov
     async function getWeather() {
     // https://api.weather.gov/gridpoints/TOP/32,81/forecast/hourly
       try {
@@ -140,12 +140,20 @@
         const pointsData = await pointsResponse.json();
         const forecastHourlyUrl = pointsData.properties.forecastHourly;
         const source = pointsData.properties.cwa;
+        const timezone = pointsData.properties.timeZone;
+        const timeZone = timezone || 'America/New_York';
+        
+        const city = pointsData.properties.relativeLocation.properties.city;
+        const state = pointsData.properties.relativeLocation.properties.state;
+        const cityState = `${city}, ${state}`;
+console.log(cityState);
+
 
         // Step 2: Get hourly forecast
         const forecastResponse = await fetch(forecastHourlyUrl);
         const forecastData = await forecastResponse.json();
 
-        // Step 3: Extract current readings (technically period 1)
+        // Step 3: Extract current weather readings (technically period 1)
         const currentUpdate =        forecastData.properties.updateTime;
         
         const currentTemperature =   forecastData.properties.periods[0].temperature;
@@ -168,6 +176,8 @@
         document.getElementById('dewpoint').textContent = `${currentDewpoint}°F`;
         document.getElementById('humidity').textContent = `${currentHumidity}%`;
 
+      updateTime(timeZone,latitude, longitude, cityState);
+      
       } catch (error) {
         document.getElementById('weatherSource').textContent ='Error fetching source (cwa).';
         document.getElementById('updateTime').textContent ='Error fetching updateTime.';
@@ -178,50 +188,115 @@
         document.getElementById('precipitation').textContent = 'Error fetching precipitation.';
         document.getElementById('dewpoint').textContent = 'Error fetching dewpoint.';
         document.getElementById('humidity').textContent = 'Error fetching humidity.';
-      }
+      }        
+      
     }
 
+    function updateTime(TZ, LAT, LON, CS) {
 
-
-
-    function updateTime() {
       const now = new Date();
 
-      // Local Time (Eastern Time, US)
-      const localDate = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-      const localTime = now.toLocaleTimeString('en-US', {
-        timeZone: 'America/New_York',
-        hour12: false
+      // DateTime based on TZ
+console.log(TZ);
+      const localDate = now.toLocaleDateString('en-US', {timeZone: TZ});
+      const localTime = now.toLocaleTimeString('en-US', {timeZone: TZ, hour12: false});
+      
+      // convert to same format as UTCString
+      const timeZoneShort = now.toLocaleTimeString('en-us',{timeZone: TZ,timeZoneName:'short'}).split(' ')[2]; //ex. EDT
+      const weekday = now.toLocaleDateString('en-US', {weekday: 'short', timeZone: TZ})+', ';
+      
+      
+      const formattedDateTime = now.toLocaleString("en-US", {
+        timeZone: TZ,
+        weekday: "short",  // "Tue"
+        day: "2-digit",    // "20"
+        month: "short",    // "Aug"
+        year: "numeric",   // "2025"
+        hour: "2-digit",   // "13"
+        minute: "2-digit", // "43"
+        second: "2-digit", // "00"
+        hour12: false      // Use 24-hour format
       });
+      
+      const formattedDateTimeUTC = now.toLocaleString("en-US", {
+        timeZone: 'UTC',
+        weekday: "short",  // "Tue"
+        day: "2-digit",    // "20"
+        month: "short",    // "Aug"
+        year: "numeric",   // "2025"
+        hour: "2-digit",   // "13"
+        minute: "2-digit", // "43"
+        second: "2-digit", // "00"
+        hour12: false      // Use 24-hour format
+      });
+      
+      const offsetMinutes = now.getTimezoneOffset(); // e.g., -240 for EDT (4 hours behind UTC)
+      const offsetHours = Math.abs(Math.floor(offsetMinutes / 60));
+      const offsetMinutesRemainder = Math.abs(offsetMinutes % 60);
+      const sign = offsetMinutes > 0 ? "-" : "+"; // Invert the sign as getTimezoneOffset returns the *opposite*
+      const timezoneOffset = `${sign}${String(offsetHours).padStart(2, "0")}${String(offsetMinutesRemainder).padStart(2, "0")}`;
+      const timezoneAbbreviation = timeZoneShort;
+      const rfc1322Format = `${formattedDateTime} ${timezoneAbbreviation}`;
+      console.log(rfc1322Format);
+      
+      
+      
+      
+      
+      
+      
+      
+      const localDate2 = now.toLocaleDateString('en-US', {timeZone: TZ});
+
+console.log(timeZoneShort);
+
 
       // UTC Time
-      const utcDate = now.toISOString().split("T")[0]; // YYYY-MM-DD
-      const utcTime = now.toUTCString().split(" ")[4]; // HH:MM:SS
-
-      // Day of Week
-      const weekday = now.toLocaleDateString('en-US', {
-        weekday: 'long',
-        timeZone: 'America/New_York'
-      });
-
+      const utcDate = `${formattedDateTimeUTC} UTC`; // YYYY-MM-DD
+      //const utcDate = now.toUTCString(); // YYYY-MM-DD
+      //const utcDate = now.toUTCString().split("T")[0]; // YYYY-MM-DD
+      const gs6 = latLonToMaidenhead(latitude, longitude);
+console.log(gs6);
       // Update Elements
-      document.getElementById('local-date').textContent = localDate;
-      document.getElementById('local-time').textContent = localTime;
+      document.getElementById('rfc1322Format').textContent = rfc1322Format;
       document.getElementById('utc-date').textContent = utcDate;
-      document.getElementById('utc-time').textContent = utcTime;
-      document.getElementById('weekday').textContent = weekday;
+      document.getElementById('local-lat').textContent = LAT;
+      document.getElementById('local-long').textContent = LON;
+      document.getElementById('gridsquare').textContent = gs6;
+      document.getElementById('location').textContent = CS;
     }
     
     function updateWeather(){
-        getWeather();
-}
+      getWeather();
+    }
+    
+    function latLonToMaidenhead(latitude, longitude) {
+      // Normalize and shift
+      let lon = longitude + 180;
+      let lat = latitude + 90;
 
-    updateTime();
+      // Field characters
+      let fieldLon = Math.floor(lon / 20);
+      let fieldLat = Math.floor(lat / 10);
+      let maidenhead = String.fromCharCode(65 + fieldLon) + String.fromCharCode(65 + fieldLat);
+
+      // Square digits
+      let squareLon = Math.floor((lon % 20) / 2);
+      let squareLat = Math.floor((lat % 10) / 1);
+      maidenhead += squareLon.toString() + squareLat.toString();
+
+      // Subsquare characters
+      let subsquareLon = Math.floor(((lon % 20) % 2) * 12);
+      let subsquareLat = Math.floor(((lat % 10) % 1) * 24);
+      maidenhead += String.fromCharCode(65 + subsquareLon) + String.fromCharCode(65 + subsquareLat);
+
+      return maidenhead;
+    }   
     updateWeather;
-
-    setInterval(updateTime, 1000);
+    //updateTime();
     setInterval(updateWeather, 1000);
+    //setInterval(updateTime, 1000);
+
   </script>
 </body>
 </html>
-
