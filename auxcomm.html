@@ -7,11 +7,12 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Arial, sans-serif;
+	  font-family: Consolas, Monaco, monospace;
+	  font-size: 24px;
       background-color: #111;
       color: #eee;
       display: grid;
-      grid-template-rows: 1min-content 1fr 1fr 1fr;
+      grid-template-rows: 96px 256px auto;
       grid-gap: 10px;
       height: 100vh;
       padding: 10px;
@@ -28,108 +29,113 @@
       overflow: hidden;
     }
     img {
+	  display: block;
       width: 90%;
       height: auto;
       border-radius: 4px;
+	  margin: auto;
     }
-    .small-text { font-size: 0.9em; }
+    .small-text { font-size: 12px; }
+    .header { 
+	  display: inline;
+	  font-size: 64px;
+	  font-weight: bold;
+	  margin: auto;
+	  text-align: center;
+	}
+    .subheader { 
+	  display: inline;
+	  font-size: 32px;
+	  font-weight: bold;
+	  text-decoration: underline;
+	  margin: auto;
+	  text-align: center;
+	}
+	
     .realhighlight { color: #0f0; font-weight: bold; }
     .statichighlight { color: #f00; font-weight: bold; }
-    textarea {
-      width: 100%;
-      height: 100%;
-      background: #000;
-      color: #0f0;
-      border: none;
-      resize: none;
-      font-family: monospace;
-    }
+
   </style>
 </head>
+
 <body>
 
+  <!-- Header -->
   <div class="row">
-  <div class="box" id="header">
-    <center><h2>KG4NJA - Langley Research Center</h2></center>
-    </div>
-   </div>
-  <!-- Top Row -->
+    <div class="box">
+	  <div class="header"><center>KG4NJA - Langley Research Center</center></div>
+	</div>
+  </div>
+  
+  
+  <!-- Row 2 -->
   <div class="row">
-    <!-- Date & Time -->
+    
+	
+	<!-- Date Time and Location -->
     <div class="box" id="datetime">
-      <center><u><h3>Date / Time / Location</h3></u></center>
-      
+      <div class="subheader"><center>Date / Time / Location</center></div>
+	  <br>
       <p>Local: <span id="rfc1322Format" class="realhighlight"></span></p>
-      
-      
-      <p>&nbsp;UTC: <span id="utc-date" class="realhighlight"></span></p>
+      <p>&nbsp;&nbsp;UTC: <span id="utc-date" class="realhighlight"></span></p>
       <br>
       <p>Lat/Long: <span id="local-lat" class="realhighlight"></span>, <span id="local-long" class="realhighlight"></span></p>
-      <p>Grid: <span id="gridsquare" class="realhighlight"></span> - <span id="location" class="realhighlight"></span></p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;Grid: <span id="gridsquare" class="realhighlight"></span> - <span id="location" class="realhighlight"></span></p>
     </div>
 
-    <!-- Weather Placeholder -->
+
+    <!-- Weather -->
     <div class="box" id="weather">
-      <center><u><h3>Weather</h3></u></center>
-      <p>Temp: <span id="temperature" class="realhighlight">Loading...</span></p>
-      <p>Wind: <span id="windSpeed" class="realhighlight">Loading...</span>&nbsp;<span id="windDirection" class="realhighlight">Loading...</span></p>
-      <p>Humidity: <span id="humidity" class="realhighlight">Loading...</span> Dewpoint: <span id="dewpoint" class="realhighlight">Loading...</span></p>
+      <div class="subheader"><center>Weather</center></div>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;Temp: <span id="temperature" class="realhighlight">Loading...</span></p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;Wind: <span id="windSpeed" class="realhighlight">Loading...</span>&nbsp;<span id="windDirection" class="realhighlight">Loading...</span></p>
+      <p>Humidity: <span id="humidity" class="realhighlight">Loading...</span>&nbsp;&nbsp;&nbsp;Dewpoint: <span id="dewpoint" class="realhighlight">Loading...</span></p>
       <p>Precip Chance: <span id="precipitation" class="realhighlight">Loading...</span></p>
-      <p>Status: <span id="shortForecast" class="realhighlight">Loading...</span></p>
+      <p>&nbsp;&nbsp;Status: <span id="shortForecast" class="realhighlight">Loading...</span></p>
       <br>
-      <p>Source: <span id="weatherSource" class="realhighlight">Loading...</span> <span id="updateTime" class="realhighlight">Loading...</span></p>
+      <center><p class="small-text">Source: <span id="weatherSource" class="realhighlight">Loading...</span> <span id="updateTime" class="realhighlight">Loading...</span></p></center>
     </div>
 
-    <!-- Frequency Info -->
+
+    <!-- Frequencies -->
     <div class="box" id="frequencies">
-      <center><u><h3>Local ARES Frequencies</h3></u></center>
-      <p>Primary: <span class="statichighlight">146.760 (-) CTCSS 118.8 Hz (WMX)</span></p>
+      <div class="subheader"><center>Local ARES Frequencies</center></div>
+      <p>&nbsp;&nbsp;Primary: <span class="statichighlight">146.760 (-) CTCSS 118.8 Hz (WMX)</span></p>
       <p>Alternate: <span class="statichighlight">146.670 (+) CTCSS 173.8 Hz (HAX)</span></p>
-      <p>ODEN/A: <span class="statichighlight">3947 kHz (pri) 7240 kHz (alt)</span></p>
-      <p>ODEN/B: <span class="statichighlight">3943 kHz (pri) 7248 kHz (alt)</span></p>
+	  <br>
+      <p>&nbsp;ODEN/A: <span class="statichighlight">3947 kHz (pri) 7240 kHz (alt)</span></p>
+      <p>&nbsp;ODEN/B: <span class="statichighlight">3943 kHz (pri) 7248 kHz (alt)</span></p>
       <p>ODEN/CD: <span class="statichighlight">3578.5 kHz (pri) 7050 kHz (alt)</span></p>
     </div>
   </div>
 
   <!-- Middle Row -->
   <div class="row">
-    <div class="box">
-      <h2>HF Propagation</h2>
+    <div class="box"><div class="img">
+      <div class="subheader"><center>Solar Indices and VHF/HF Propagation</center></div>
+	  <br>
       <img height="30%" width="10%" src="https://www.hamqsl.com/solar101vhf.php" alt="HF Propagation Info">
-    </div>
+    </div></div>
     <div class="box">
-      <h2>HF Propagation</h2>
+      <div class="subheader"><center>MUF and Greyline</center></div>
+	  <br>
       <img height="30%" width="10%" src="https://www.hamqsl.com/solarmuf.php" alt="HF Propagation Info">
     </div>
   </div>
 
-  <!-- Bottom Row -->
-  <div class="row">
-    <!-- Message Templates -->
-    <div class="box">
-      <h2>Message Templates</h2>
-      <ul class="small-text">
-        <li><strong>Emergency:</strong> "This is KG4NJA reporting emergency traffic for LaRC-EOC."</li>
-        <li><strong>Priority:</strong> "Priority message from LaRC-EOC to [Recipient], relay ASAP."</li>
-        <li><strong>Routine:</strong> "Routine SITREP from [CALLSIGN] to [Net Control]."</li>
-      </ul>
-    </div>
 
-    <!-- Operator Notes -->
-    <div class="box">
-      <h2>Shift Notes / Status</h2>
-      <textarea placeholder="Operator Log / Shift Notes..."></textarea>
-    </div>
-  </div>
 
-  <!-- JavaScript for Updates -->
+
+
+
+  <!-- JavaScript for Updates ------------------------------------------------------------------->
   <script>
     // Process query
     const urlParams = new URLSearchParams(window.location.search);
     const urllat = urlParams.get('lat'); 
     const urllon = urlParams.get('lon');
-    const latitude = urllat || 37.09136; // ensure default 41
-    const longitude = urllon || -76.37917; // ensure default -123
+    const latitude = urllat || 37.38491; //37.09136; // ensure default 41
+    const longitude = urllon || -76.58653; //-76.37917; // ensure default -123
 
     // Local Weather from api.weather.gov
     async function getWeather() {
